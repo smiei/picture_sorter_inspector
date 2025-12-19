@@ -1,6 +1,6 @@
 # Photo Sorter
 
-An interactive web tool to triage photos and videos from the `images/` folder. It shows each item, lets you mark it (favorite/keep/later/delete), displays capture date and location (if available), and can export your decisions as JSON.
+An interactive web tool to triage photos and videos from the `images/` folder. It shows each item, lets you mark it (favorite/keep/later/delete), displays capture date and location (if available), and can export your decisions as JSON. A script can process the files afterwards (Included).
 
 ## Features
 - Supports images and videos (jpg/jpeg/png/gif/bmp/webp/heic/heif/tif/tiff/mp4/mov/m4v).
