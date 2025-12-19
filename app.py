@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, jsonify, render_template, send_from_directory
 
 from scripts.build_manifest import (
     ExiftoolNotFoundError,
@@ -72,6 +72,21 @@ def index():
 @app.route("/images/<path:filename>")
 def serve_image(filename: str):
     return send_from_directory(str(IMAGES_DIR), filename)
+
+
+@app.route("/api/rebuild_manifest", methods=["POST"])
+def api_rebuild_manifest():
+    global exiftool_error
+    try:
+        data = build_manifest(IMAGES_DIR, MANIFEST_PATH)
+        exiftool_error = None
+        return jsonify({"ok": True, "count": len(data)})
+    except ExiftoolNotFoundError as exc:
+        exiftool_error = str(exc)
+        return jsonify({"ok": False, "error": exiftool_error}), 500
+    except Exception as exc:  # pragma: no cover - safety net
+        exiftool_error = f"Fehler beim Erzeugen des Manifests: {exc}"
+        return jsonify({"ok": False, "error": exiftool_error}), 500
 
 
 if __name__ == "__main__":

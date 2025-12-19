@@ -17,7 +17,7 @@ body {
 
 header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 12px;
 }
@@ -26,6 +26,12 @@ header h1 {
   margin: 0;
   font-size: 1.4rem;
   letter-spacing: 0.3px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .status {
@@ -89,6 +95,18 @@ header h1 {
   font-size: 0.95rem;
   cursor: pointer;
   transition: transform 0.08s ease, box-shadow 0.12s ease, background 0.2s ease;
+}
+
+.ghost {
+  background: #eef1f6;
+  color: #1f2933;
+  border: 1px solid #d4d9e1;
+  box-shadow: none;
+}
+
+.ghost:hover {
+  background: #e0e7f1;
+  box-shadow: none;
 }
 
 .controls button:hover {

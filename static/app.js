@@ -14,6 +14,7 @@ const mapEl = document.getElementById("map");
 const mapMessageEl = document.getElementById("mapMessage");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
+const rebuildBtn = document.getElementById("rebuildBtn");
 
 function setStatus(message = "", isError = false) {
   statusEl.textContent = message;
@@ -108,6 +109,7 @@ function goPrev() {
 function attachEvents() {
   nextBtn.addEventListener("click", goNext);
   prevBtn.addEventListener("click", goPrev);
+  rebuildBtn.addEventListener("click", rebuildManifest);
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "ArrowRight") {
@@ -118,9 +120,35 @@ function attachEvents() {
   });
 }
 
-async function loadImages() {
+async function rebuildManifest() {
+  rebuildBtn.disabled = true;
+  setStatus("Manifest wird neu erstellt...");
+  try {
+    const response = await fetch("/api/rebuild_manifest", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const result = await response.json();
+    if (!response.ok || !result.ok) {
+      throw new Error(result.error || `HTTP ${response.status}`);
+    }
+    setStatus("Manifest aktualisiert.");
+    document.body.dataset.exiftoolError = "";
+    await loadImages(true);
+  } catch (error) {
+    console.error(error);
+    setStatus(`Fehler beim Erzeugen des Manifests: ${error}`, true);
+    document.body.dataset.exiftoolError = String(error);
+  } finally {
+    rebuildBtn.disabled = false;
+  }
+}
+
+async function loadImages(skipStatus = false) {
   const exiftoolError = document.body.dataset.exiftoolError?.trim();
-  if (exiftoolError) {
+  if (exiftoolError && !skipStatus) {
     setStatus(exiftoolError, true);
   }
 

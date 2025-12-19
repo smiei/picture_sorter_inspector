@@ -39,6 +39,7 @@ start_server.bat
 ## Bedienung
 - Navigation per Buttons „Zurück/Weiter“ oder Pfeiltasten links/rechts.
 - Karte zeigt Marker, wenn GPS-Metadaten vorhanden sind; sonst eine Hinweis-Meldung.
+- Button „Manifest neu erstellen“ erzeugt `static/images.json` neu (nützlich nach dem Hinzufügen neuer Bilder).
 - Sortierung: DateTimeOriginal → CreateDate → Dateisystem-MTime (absteigend).
 
 ## Hinweise bei fehlendem `exiftool`

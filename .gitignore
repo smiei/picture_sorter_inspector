@@ -1,6 +1,7 @@
 # Personal media and exported decisions (may contain private data)
 images/
 output/
+static/images.json
 
 # Python bytecode and build artifacts
 __pycache__/
