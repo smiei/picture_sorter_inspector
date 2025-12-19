@@ -1,0 +1,35 @@
+# Personal media and exported decisions (may contain private data)
+images/
+output/
+
+# Python bytecode and build artifacts
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments and local tooling
+.venv/
+venv/
+env/
+.env
+.env.*
+.python-version
+
+# Logs, caches, and temp files
+*.log
+*.tmp
+*.cache
+*.pid
+.coverage
+.coverage.*
+htmlcov/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
