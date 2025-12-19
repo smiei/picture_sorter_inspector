@@ -1,0 +1,152 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f6f7fb;
+  color: #1f2933;
+}
+
+#app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  letter-spacing: 0.3px;
+}
+
+.status {
+  color: #b23b30;
+  font-size: 0.95rem;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+}
+
+.viewer,
+.map-panel {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  padding: 14px;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+
+.image-wrapper {
+  flex: 1;
+  background: linear-gradient(135deg, #eef1f6, #e6ebf5);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#photo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.meta {
+  margin: 10px 0;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  color: #4a5568;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+}
+
+.controls button {
+  flex: 1;
+  padding: 10px 12px;
+  background: #0d6efd;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.12s ease, background 0.2s ease;
+}
+
+.controls button:hover {
+  background: #0b5ed7;
+  box-shadow: 0 6px 16px rgba(13, 110, 253, 0.25);
+}
+
+.controls button:disabled {
+  background: #cbd5e1;
+  color: #6b7280;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.controls button:active {
+  transform: translateY(1px);
+}
+
+.map-panel {
+  overflow: hidden;
+}
+
+#mapContainer {
+  position: relative;
+  flex: 1;
+  min-height: 320px;
+}
+
+#map,
+#mapMessage {
+  position: absolute;
+  inset: 0;
+}
+
+#map {
+  border-radius: 8px;
+}
+
+#mapMessage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef1f6;
+  color: #6b7280;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  #app {
+    padding: 12px;
+  }
+}

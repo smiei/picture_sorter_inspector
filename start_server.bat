@@ -1,6 +1,10 @@
 @echo off
-pushd "%~dp0"
-start "" python server.py
-timeout /t 1 >nul
-start "" http://localhost:8000
-popd
+setlocal
+
+if exist ".venv\Scripts\activate.bat" (
+    call ".venv\Scripts\activate.bat"
+) else (
+    echo Hinweis: Kein virtuelles Environment (.venv) gefunden. Python aus dem PATH wird verwendet.
+)
+
+python app.py

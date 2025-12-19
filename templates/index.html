@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Diashow mit Karte</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body data-exiftool-error="{{ exiftool_error or '' }}">
+    <div id="app">
+      <header>
+        <h1>Lokale Fotos</h1>
+        <div id="statusMessage" class="status"></div>
+      </header>
+      <main class="layout">
+        <section class="viewer">
+          <div class="image-wrapper">
+            <img id="photo" alt="Aktuelles Bild" />
+          </div>
+          <div class="meta">
+            <span id="filename"></span>
+            <span id="date"></span>
+          </div>
+          <div class="controls">
+            <button id="prevBtn" type="button">Zurück</button>
+            <button id="nextBtn" type="button">Weiter</button>
+          </div>
+        </section>
+        <section class="map-panel">
+          <div id="mapContainer">
+            <div id="map"></div>
+            <div id="mapMessage" class="hidden">Kein Aufnahmeort in Metadaten</div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>
