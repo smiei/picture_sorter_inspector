@@ -6,7 +6,7 @@ import logging
 import mimetypes
 import shutil
 import subprocess
-from datetime import datetime
+from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Iterable
@@ -23,7 +23,21 @@ LOG_DIR.mkdir(exist_ok=True)
 SERVER_LOG = LOG_DIR / "server.log"
 CLIENT_LOG = LOG_DIR / "frontend.log"
 
-SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".heic", ".heif", ".tif", ".tiff"}
+SUPPORTED_EXTENSIONS = {
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".bmp",
+    ".webp",
+    ".heic",
+    ".heif",
+    ".tif",
+    ".tiff",
+    ".mp4",
+    ".mov",
+    ".m4v",
+}
 
 logging.basicConfig(
     level=logging.INFO,
@@ -58,16 +72,23 @@ def _parse_dt_obj(value: str | None) -> datetime | None:
         return None
     normalized = value.strip().replace(":", "-", 2).replace(" ", "T", 1)
     try:
-        return datetime.fromisoformat(normalized)
+        dt = datetime.fromisoformat(normalized)
     except Exception:  # noqa: BLE001 - broad on purpose
         try:
-            return datetime.strptime(normalized, "%Y-%m-%dT%H:%M:%S")
+            dt = datetime.strptime(normalized, "%Y-%m-%dT%H:%M:%S")
         except Exception:
             return None
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
 
 
 def _dt_to_iso(dt: datetime | None, fallback: datetime) -> str:
     return (dt or fallback).isoformat()
+
+
+def _kind_for_path(path: Path) -> str:
+    return "video" if path.suffix.lower() in {".mp4", ".mov", ".m4v"} else "image"
 
 
 def _build_manifest_with_exiftool(exiftool_path: str) -> list[dict[str, Any]]:
@@ -111,6 +132,7 @@ def _build_manifest_with_exiftool(exiftool_path: str) -> list[dict[str, Any]]:
                 "src": f"/images/{src.relative_to(IMAGES_DIR).as_posix()}",
                 "dateTaken": _dt_to_iso(primary_dt, fallback_dt),
                 "originalDate": _dt_to_iso(original_dt, fallback_dt),
+                "type": _kind_for_path(src),
                 "lat": float(entry["GPSLatitude"]) if entry.get("GPSLatitude") is not None else None,
                 "lon": float(entry["GPSLongitude"]) if entry.get("GPSLongitude") is not None else None,
             }
@@ -130,6 +152,7 @@ def _build_manifest_fallback() -> list[dict[str, Any]]:
                     "src": f"/images/{path.relative_to(IMAGES_DIR).as_posix()}",
                     "dateTaken": mtime_iso,
                     "originalDate": mtime_iso,
+                    "type": _kind_for_path(path),
                     "lat": None,
                     "lon": None,
                 }
@@ -161,10 +184,10 @@ def build_manifest(force: bool = False) -> tuple[list[dict[str, Any]], str | Non
             data = _build_manifest_with_exiftool(exiftool_path)
             exiftool_error = None
         else:
-            exiftool_error = "Exiftool fehlt, verwende Dateisystem-Daten (ohne GPS)."
+            exiftool_error = "Exiftool missing, using filesystem timestamps only (no GPS)."
             data = _build_manifest_fallback()
     except Exception as exc:  # noqa: BLE001
-        exiftool_error = f"Fehler beim Manifest: {exc}"
+        exiftool_error = f"Error while building manifest: {exc}"
         data = _build_manifest_fallback()
 
     MANIFEST_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
@@ -256,9 +279,9 @@ class Handler(SimpleHTTPRequestHandler):
             payload = json.loads(body.decode("utf-8"))
             decisions = payload.get("decisions")
             if not isinstance(decisions, list):
-                raise ValueError("decisions muss ein Array sein")
+                raise ValueError("decisions must be an array")
         except Exception as exc:  # noqa: BLE001
-            self.send_error(400, f"Ungültige JSON: {exc}")
+            self.send_error(400, f"Invalid JSON: {exc}")
             return
 
         OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)

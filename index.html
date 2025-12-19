@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bildsorter</title>
+  <title>Photo Sorter</title>
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -48,7 +48,15 @@
     }
     header .muted { color: var(--muted); font-size: 0.95rem; }
     #progress { text-align: center; color: var(--muted); }
-    .actions { display: flex; gap: 0.5rem; }
+    .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; }
+    select {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 0.55rem 0.8rem;
+      font-size: 0.95rem;
+    }
     button {
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -84,7 +92,14 @@
       justify-content: center;
       overflow: hidden;
     }
-    #currentImage { max-width: 100%; max-height: 80vh; object-fit: contain; background: #06080f; }
+    #currentImage,
+    #currentVideo {
+      max-width: 100%;
+      max-height: 80vh;
+      object-fit: contain;
+      background: #06080f;
+    }
+    #currentVideo { width: 100%; height: auto; }
     .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.92rem; flex-wrap: wrap; gap: 0.5rem; }
     #mapContainer {
       position: relative;
@@ -172,11 +187,16 @@
 </head>
 <body>
   <header>
-    <div><strong>Quelle:</strong> <span class="muted">images/</span></div>
-    <div id="progress">Initialisiere ...</div>
+    <div><strong>Source:</strong> <span class="muted">images/</span></div>
+    <div id="progress">Initializing ...</div>
     <div class="actions">
-      <button id="rebuildBtn" type="button">Manifest neu erstellen</button>
-      <button id="exportBtn" class="primary" type="button">Entscheidungen exportieren</button>
+      <select id="filterSelect">
+        <option value="all">Images & Videos</option>
+        <option value="image">Images only</option>
+        <option value="video">Videos only</option>
+      </select>
+      <button id="rebuildBtn" type="button">Rebuild manifest</button>
+      <button id="exportBtn" class="primary" type="button">Save decisions</button>
     </div>
   </header>
 
@@ -185,7 +205,7 @@
       <div class="grid">
         <section class="card">
           <div id="imageFrame">
-            <img id="currentImage" alt="Aktuelles Bild" />
+            <img id="currentImage" alt="Current image" />
           </div>
           <div class="meta">
             <span id="filename">–</span>
@@ -195,31 +215,31 @@
 
         <div class="side-column">
           <section class="original-card">
-            <h3>Original Date</h3>
+            <h3>Original date</h3>
             <div id="originalDate" class="original-value">–</div>
           </section>
           <section class="card map-card">
             <div class="map-meta">
-              <span>Aufnahmeort</span>
+              <span>Capture location</span>
               <span id="gpsStatus" class="muted">–</span>
             </div>
             <div id="mapContainer">
               <div id="map"></div>
-              <div id="mapMessage" class="hidden">Kein Aufnahmeort vorhanden</div>
+              <div id="mapMessage" class="hidden">No location available</div>
             </div>
           </section>
         </div>
       </div>
 
       <div id="decisionButtons">
-        <button class="favorite" data-action="favorite">★ Favorit (1 / Y)</button>
-        <button class="like" data-action="like">✔ Behalten (2 / B)</button>
-        <button class="later" data-action="later">? Später (3 / A)</button>
-        <button class="delete" data-action="delete">🗑 Löschen (4 / X)</button>
+        <button class="like" data-action="like">✔ Keep (2 / A)</button>
+        <button class="delete" data-action="delete">🗑 Delete (4 / B)</button>
+        <button class="later" data-action="later">? Later (3 / X)</button>
+        <button class="favorite" data-action="favorite">★ Favorite (1 / Y)</button>
       </div>
       <div id="statusBar">
-        Tastatur: 1=Fav, 2=Behalten, 3=Später, 4=Löschen, ←/→=vor/zurück, Z/Backspace=Undo<br />
-        Controller: Y=Fav, B=Behalten, X=Dislike, A=Später, D-Pad ←/→
+        Keyboard: 1=Fav, 2=Keep, 3=Later, 4=Delete, ←/→=prev/next, Z/Backspace=Undo<br />
+        Controller: A=Keep, B=Delete, X=Later, Y=Fav, D-Pad ←/→
       </div>
     </div>
   </main>
