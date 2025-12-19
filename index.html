@@ -2,382 +2,233 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>Urlaubsbilder sortieren</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bildsorter</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
   <style>
+    :root {
+      --bg: #0c0f17;
+      --panel: #141a26;
+      --panel-2: #1c2433;
+      --accent: #3b82f6;
+      --text: #e7edf8;
+      --muted: #9aa6bf;
+      --border: #1f2937;
+      --danger: #ef4444;
+      --success: #22c55e;
+    }
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #111;
-      color: #eee;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(59,130,246,0.08), transparent 35%),
+                  radial-gradient(circle at 80% 10%, rgba(14,165,233,0.08), transparent 30%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      height: 100vh;
     }
-
     header {
-      padding: 0.5rem 1rem;
-      background: #222;
-      display: flex;
-      justify-content: space-between;
+      padding: 0.8rem 1rem;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 0.75rem;
       align-items: center;
-      gap: 1rem;
+      background: linear-gradient(120deg, #0f1623, #0c111a);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
-
-    main {
-      flex: 1;
+    header .muted { color: var(--muted); font-size: 0.95rem; }
+    #progress { text-align: center; color: var(--muted); }
+    .actions { display: flex; gap: 0.5rem; }
+    button {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      color: var(--text);
+      background: var(--panel-2);
+      padding: 0.6rem 0.9rem;
+      font-size: 0.95rem;
+    }
+    button.primary { background: var(--accent); color: #0b1220; border-color: #4b8df8; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    main { flex: 1; padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
+    #app.hidden { display: none; }
+    .grid { display: grid; grid-template-columns: 2fr 1.2fr; gap: 1rem; align-items: stretch; }
+    .side-column { display: flex; flex-direction: column; gap: 0.75rem; height: 100%; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.75rem;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.3);
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      padding: 1rem;
+      gap: 0.6rem;
     }
-
-    #imageContainer {
-      max-width: 90vw;
-      max-height: 70vh;
+    #imageFrame {
+      background: #06080f;
+      border: 1px solid #1f2a3d;
+      border-radius: 10px;
+      min-height: 360px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #000;
-      border-radius: 8px;
       overflow: hidden;
     }
-
-    #currentImage {
-      max-width: 100%;
-      max-height: 70vh;
-      object-fit: contain;
-      background: #000;
+    #currentImage { max-width: 100%; max-height: 80vh; object-fit: contain; background: #06080f; }
+    .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.92rem; flex-wrap: wrap; gap: 0.5rem; }
+    #mapContainer {
+      position: relative;
+      flex: 1;
+      min-height: 320px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #1f2a3d;
     }
-
-    #actions {
+    #map { position: absolute; inset: 0; }
+    #mapMessage {
+      position: absolute;
+      inset: 0;
       display: flex;
-      gap: 0.75rem;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(120deg, #161d2a, #0f141f);
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .hidden { display: none !important; }
+    #decisionButtons {
+      display: flex;
+      gap: 0.6rem;
       flex-wrap: wrap;
       justify-content: center;
     }
-
-    button.action {
-      border: none;
-      padding: 0.6rem 1rem;
+    #decisionButtons button {
+      min-width: 140px;
       border-radius: 999px;
-      font-size: 0.95rem;
-      cursor: pointer;
-      background: #333;
-      color: #eee;
-      min-width: 120px;
+      border: 1px solid #253146;
+      background: #1a2333;
     }
-
-    button.action:hover {
-      background: #444;
-    }
-
-    button.favorite { border: 1px solid #ffd700; }
-    button.like { border: 1px solid #4caf50; }
-    button.later { border: 1px solid #03a9f4; }
-    button.delete { border: 1px solid #f44336; }
-
-    #statusBar {
-      font-size: 0.85rem;
-      opacity: 0.85;
-      text-align: center;
-      padding-bottom: 0.5rem;
-    }
-
-    #fileInputWrapper {
+    #decisionButtons .favorite { border-color: #f8d74a; }
+    #decisionButtons .like { border-color: #4ade80; }
+    #decisionButtons .later { border-color: #38bdf8; }
+    #decisionButtons .delete { border-color: #ef4444; }
+    #statusBar { text-align: center; color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
+    .map-meta {
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 0.5rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      gap: 0.75rem;
+      flex-wrap: wrap;
     }
-
-    #exportBtn {
-      padding: 0.3rem 0.7rem;
-      font-size: 0.85rem;
-      border-radius: 999px;
-      border: none;
-      cursor: pointer;
-      background: #444;
-      color: #eee;
+    .map-meta .original {
+      display: flex;
+      gap: 0.35rem;
+      align-items: center;
+      color: var(--text);
+      font-weight: 600;
     }
-
-    #exportBtn:hover {
-      background: #555;
+    .map-meta .label { color: var(--muted); font-weight: 500; }
+    .original-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.3);
     }
-
-    .hidden {
-      display: none;
+    .original-card h3 {
+      margin: 0 0 0.3rem 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+      font-weight: 600;
+    }
+    .original-value {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .original-value.muted { color: var(--muted); font-weight: 500; }
+    .map-card {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    @media (max-width: 1000px) {
+      .grid { grid-template-columns: 1fr; }
+      #currentImage { max-height: 60vh; }
     }
   </style>
 </head>
 <body>
   <header>
-    <div id="fileInputWrapper">
-      <div><strong>Quelle:</strong> /images (wird automatisch geladen)</div>
+    <div><strong>Quelle:</strong> <span class="muted">images/</span></div>
+    <div id="progress">Initialisiere ...</div>
+    <div class="actions">
+      <button id="rebuildBtn" type="button">Manifest neu erstellen</button>
+      <button id="exportBtn" class="primary" type="button">Entscheidungen exportieren</button>
     </div>
-    <div id="progressInfo">Lade Bilder ...</div>
-    <button id="exportBtn" class="hidden">Entscheidungen exportieren</button>
   </header>
 
-  <main id="app" class="hidden">
-    <div id="imageContainer">
-      <img id="currentImage" alt="Aktuelles Bild" />
-    </div>
-    <div id="actions">
-      <button class="action favorite" data-action="favorite">★ Favorite (1 / Y)</button>
-      <button class="action like" data-action="like">✔ Behalten (2 / B)</button>
-      <button class="action later" data-action="later">? Später (3 / A)</button>
-      <button class="action delete" data-action="delete">🗑 Dislike (4 / X)</button>
-    </div>
-    <div id="statusBar">
-      Tastatur: 1=Fav, 2=Behalten, 3=Später, 4=Löschen, ←/→=vor/zurück, Z/Backspace=Undo<br>
-      Controller: Y=Fav, B=Behalten, X=Dislike, A=Später, D-Pad ←/→=vor/zurück
+  <main>
+    <div id="app" class="hidden">
+      <div class="grid">
+        <section class="card">
+          <div id="imageFrame">
+            <img id="currentImage" alt="Aktuelles Bild" />
+          </div>
+          <div class="meta">
+            <span id="filename">–</span>
+            <span id="dateInfo">–</span>
+          </div>
+        </section>
+
+        <div class="side-column">
+          <section class="original-card">
+            <h3>Original Date</h3>
+            <div id="originalDate" class="original-value">–</div>
+          </section>
+          <section class="card map-card">
+            <div class="map-meta">
+              <span>Aufnahmeort</span>
+              <span id="gpsStatus" class="muted">–</span>
+            </div>
+            <div id="mapContainer">
+              <div id="map"></div>
+              <div id="mapMessage" class="hidden">Kein Aufnahmeort vorhanden</div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div id="decisionButtons">
+        <button class="favorite" data-action="favorite">★ Favorit (1 / Y)</button>
+        <button class="like" data-action="like">✔ Behalten (2 / B)</button>
+        <button class="later" data-action="later">? Später (3 / A)</button>
+        <button class="delete" data-action="delete">🗑 Löschen (4 / X)</button>
+      </div>
+      <div id="statusBar">
+        Tastatur: 1=Fav, 2=Behalten, 3=Später, 4=Löschen, ←/→=vor/zurück, Z/Backspace=Undo<br />
+        Controller: Y=Fav, B=Behalten, X=Dislike, A=Später, D-Pad ←/→
+      </div>
     </div>
   </main>
 
-  <script>
-    let images = [];
-    let currentIndex = 0;
-    let historyStack = [];
-
-    const app = document.getElementById("app");
-    const currentImageEl = document.getElementById("currentImage");
-    const progressInfo = document.getElementById("progressInfo");
-    const exportBtn = document.getElementById("exportBtn");
-
-    async function loadImagesFromFolder() {
-      progressInfo.textContent = "Lade Bilder aus /images ...";
-      try {
-        const response = await fetch("images/");
-        if (!response.ok) {
-          throw new Error(`Server antwortete mit Status ${response.status}`);
-        }
-
-        const html = await response.text();
-        const doc = new DOMParser().parseFromString(html, "text/html");
-        const fileNames = Array.from(doc.querySelectorAll("a"))
-          .map(link => link.getAttribute("href"))
-          .filter(Boolean)
-          .map(name => decodeURIComponent(name.split("?")[0]))
-          .filter(name => !name.endsWith("/"))
-          .filter(name => !name.startsWith("."))
-          .filter(name => !name.startsWith(".."))
-          .filter(name => /\.(png|jpe?g|gif|bmp|webp)$/i.test(name));
-
-        images = fileNames.map(rawName => {
-          const normalizedName = rawName.replace(/^\.\//, "");
-          const fileName = normalizedName.split("/").pop() || normalizedName;
-          const url = normalizedName.startsWith("images/") ? normalizedName : `images/${normalizedName}`;
-          return { name: fileName, url, status: null };
-        });
-        currentIndex = 0;
-        historyStack = [];
-
-        if (images.length) {
-          app.classList.remove("hidden");
-          exportBtn.classList.remove("hidden");
-          render();
-        } else {
-          progressInfo.textContent = "Keine Bilder im Ordner images gefunden";
-          app.classList.add("hidden");
-          exportBtn.classList.add("hidden");
-        }
-      } catch (err) {
-        console.error("Fehler beim Laden der Bilder:", err);
-        progressInfo.textContent = "Konnte Bilder nicht laden. Läuft ein lokaler Server?";
-        app.classList.add("hidden");
-        exportBtn.classList.add("hidden");
-      }
-    }
-
-    function render() {
-      if (!images.length) {
-        progressInfo.textContent = "Keine Bilder geladen";
-        currentImageEl.src = "";
-        return;
-      }
-
-      const img = images[currentIndex];
-      currentImageEl.src = img.url;
-      currentImageEl.alt = img.name;
-
-      const decidedCount = images.filter(i => i.status !== null).length;
-      progressInfo.textContent =
-        `Bild ${currentIndex + 1} / ${images.length} – Entscheidungen: ${decidedCount}/${images.length}`;
-    }
-
-    function setStatus(action) {
-      if (!images.length) return;
-      const img = images[currentIndex];
-      const previousStatus = img.status;
-
-      if (previousStatus !== action) {
-        img.status = action;
-        historyStack.push({ index: currentIndex, previousStatus });
-      }
-
-      // Automatisch weiter zum nächsten Bild
-      nextImage();
-    }
-
-    function nextImage() {
-      if (!images.length) return;
-      if (currentIndex < images.length - 1) {
-        currentIndex++;
-        render();
-      }
-    }
-
-    function prevImage() {
-      if (!images.length) return;
-      if (currentIndex > 0) {
-        currentIndex--;
-        render();
-      }
-    }
-
-    function undo() {
-      const last = historyStack.pop();
-      if (!last) return;
-      images[last.index].status = last.previousStatus;
-      currentIndex = last.index;
-      render();
-    }
-
-    // Button-Klicks
-    document.getElementById("actions").addEventListener("click", (e) => {
-      const btn = e.target.closest("button[data-action]");
-      if (!btn) return;
-      const action = btn.getAttribute("data-action");
-      setStatus(action);
-    });
-
-    // Tastatursteuerung
-    window.addEventListener("keydown", (e) => {
-      if (!images.length) return;
-
-      switch (e.key) {
-        case "1": setStatus("favorite"); break;
-        case "2": setStatus("like"); break;
-        case "3": setStatus("later"); break;
-        case "4": setStatus("delete"); break;
-        case "ArrowRight": nextImage(); break;
-        case "ArrowLeft": prevImage(); break;
-        case "Backspace":
-        case "z":
-        case "Z":
-          e.preventDefault();
-          undo();
-          break;
-      }
-    });
-
-    // Export der Entscheidungen als JSON (an lokalen Server)
-    exportBtn.addEventListener("click", async () => {
-      if (!images.length) return;
-
-      const data = images.map((img, idx) => ({
-        index: idx,
-        name: img.name,
-        status: img.status
-      }));
-
-      exportBtn.disabled = true;
-      exportBtn.textContent = "Exportiere ...";
-      progressInfo.textContent = "Speichere nach output/bildentscheidungen.json ...";
-
-      try {
-        const response = await fetch("/save-decisions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ decisions: data })
-        });
-
-        if (!response.ok) {
-          throw new Error(`Server-Antwort: ${response.status}`);
-        }
-
-        const result = await response.json().catch(() => ({}));
-        const savedPath = result.path || "output/bildentscheidungen.json";
-        progressInfo.textContent = `Gespeichert: ${savedPath} (${data.length} Einträge)`;
-      } catch (err) {
-        console.error("Fehler beim Export:", err);
-        progressInfo.textContent = "Export fehlgeschlagen. Läuft server.py?";
-        alert("Export fehlgeschlagen. Siehe Konsole für Details.");
-      } finally {
-        exportBtn.disabled = false;
-        exportBtn.textContent = "Entscheidungen exportieren";
-      }
-    });
-
-    // Gamepad-Unterstützung
-    let gamepadIndex = null;
-    let lastButtonStates = [];
-
-    window.addEventListener("gamepadconnected", (e) => {
-      gamepadIndex = e.gamepad.index;
-      lastButtonStates = [];
-      console.log("Gamepad verbunden:", e.gamepad.id);
-      requestAnimationFrame(pollGamepad);
-    });
-
-    window.addEventListener("gamepaddisconnected", (e) => {
-      console.log("Gamepad getrennt:", e.gamepad.id);
-      if (gamepadIndex === e.gamepad.index) {
-        gamepadIndex = null;
-      }
-    });
-
-    loadImagesFromFolder();
-
-    function pollGamepad() {
-      if (gamepadIndex !== null) {
-        const gamepads = navigator.getGamepads();
-        const gp = gamepads[gamepadIndex];
-        if (gp) {
-          gp.buttons.forEach((btn, idx) => {
-            const wasPressed = lastButtonStates[idx] || false;
-            const isPressed = btn.pressed;
-
-            // Edge: nur reagieren, wenn gerade neu gedrückt
-            if (isPressed && !wasPressed) {
-              handleGamepadButton(idx);
-            }
-
-            lastButtonStates[idx] = isPressed;
-          });
-        }
-      }
-      requestAnimationFrame(pollGamepad);
-    }
-
-    function handleGamepadButton(index) {
-      // Xbox-Standard-Layout:
-      // 0=A, 1=B, 2=X, 3=Y, 12=Up, 13=Down, 14=Left, 15=Right
-      switch (index) {
-        case 3: // Y
-          setStatus("favorite");
-          break;
-        case 0: // A
-          setStatus("later");
-          break;
-        case 1: // B
-          setStatus("like");
-          break;
-        case 2: // X
-          setStatus("delete"); // Dislike
-          break;
-        case 15: // D-Pad Right
-          nextImage();
-          break;
-        case 14: // D-Pad Left
-          prevImage();
-          break;
-        default:
-          // andere Buttons ignorieren
-          break;
-      }
-    }
-  </script>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script src="/static/app.js" defer></script>
 </body>
 </html>
